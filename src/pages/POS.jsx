@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const POS = () => {
@@ -6,12 +6,14 @@ const POS = () => {
   const [cart, setCart] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
+  const [contactNumber, setContactNumber] = useState('');
   const [carType, setCarType] = useState('');
   const [showCarTypeDropdown, setShowCarTypeDropdown] = useState(false);
   const [cashTendered, setCashTendered] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showReceiptPopup, setShowReceiptPopup] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
 
   // Update time every minute
   useEffect(() => {
@@ -21,31 +23,55 @@ const POS = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const services = [
-    { id: 'EC1', name: 'EC1', price: 150, category: 'SEDAN' },
-    { id: 'EC2', name: 'EC2', price: 150, category: 'SEDAN' },
-    { id: 'EC3', name: 'EC3', price: 200, category: 'SUV' },
-    { id: 'EC4', name: 'EC4', price: 200, category: 'SUV' },
-    { id: 'EC5', name: 'EC5', price: 250, category: 'TRUCK' },
-    { id: 'EC6', name: 'EC6', price: 250, category: 'TRUCK' },
-    { id: 'EC7', name: 'EC7', price: 300, category: 'VAN' },
-    { id: 'EC8', name: 'EC8', price: 300, category: 'VAN' },
-    { id: 'EC9', name: 'EC9', price: 500, category: 'LUXURY' },
-    { id: 'EC10', name: 'EC10', price: 500, category: 'LUXURY' },
-    { id: 'EC11', name: 'EC11', price: 1000, category: 'PREMIUM' },
-    { id: 'EC12', name: 'EC12', price: 1500, category: 'PREMIUM' },
+  // Price multipliers for different car types
+  const carTypeMultipliers = {
+    'Sedan': 1,
+    'SUV': 1.2,
+    'Pick up': 1.3,
+    'Van': 1.5,
+    'Tricycle': 0.8,
+    'Motorcycle': 0.7,
+    'Truck': 1.4
+  };
+
+  // Base prices for each service
+  const baseServices = [
+    // EC Promo Services
+    { id: 'EC1', name: 'EC1', basePrice: 150, category: 'EC Promo' },
+    { id: 'EC2', name: 'EC2', basePrice: 150, category: 'EC Promo' },
+    { id: 'EC3', name: 'EC3', basePrice: 200, category: 'EC Promo' },
+    { id: 'EC4', name: 'EC4', basePrice: 200, category: 'EC Promo' },
+    { id: 'EC5', name: 'EC5', basePrice: 250, category: 'EC Promo' },
+    { id: 'EC6', name: 'EC6', basePrice: 250, category: 'EC Promo' },
+    { id: 'EC7', name: 'EC7', basePrice: 300, category: 'EC Promo' },
+    { id: 'EC8', name: 'EC8', basePrice: 300, category: 'EC Promo' },
+    { id: 'EC9', name: 'EC9', basePrice: 500, category: 'EC Promo' },
+    { id: 'EC10', name: 'EC10', basePrice: 500, category: 'EC Promo' },
+    { id: 'EC11', name: 'EC11', basePrice: 1000, category: 'EC Promo' },
+    { id: 'EC12', name: 'EC12', basePrice: 1500, category: 'EC Promo' },
+    
+    // Package Services
+    { id: 'PKG1', name: 'Package 1', basePrice: 400, category: 'Packages' },
+    { id: 'PKG2', name: 'Package 2', basePrice: 600, category: 'Packages' },
+    
+    // Upgrade Services
+    { id: 'UPG1', name: 'Wax Upgrade', basePrice: 150, category: 'Upgrades' },
+    { id: 'UPG2', name: 'Interior Upgrade', basePrice: 250, category: 'Upgrades' },
   ];
+
+  // Memoize services based on carType
+  const services = useMemo(() => {
+    const multiplier = carType ? (carTypeMultipliers[carType] || 1) : 1;
+    return baseServices.map(service => ({
+      ...service,
+      price: Math.round(service.basePrice * multiplier)
+    }));
+  }, [carType]);
 
   const addToCart = (service) => {
     const existingItem = cart.find(item => item.id === service.id);
-    if (existingItem) {
-      setCart(cart.map(item =>
-        item.id === service.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCart([...cart, { ...service, quantity: 1 }]);
+    if (!existingItem) {
+      setCart([...cart, { ...service }]);
     }
   };
 
@@ -54,7 +80,7 @@ const POS = () => {
   };
 
   const getTotal = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return cart.reduce((total, item) => total + item.price, 0);
   };
 
   const getChange = () => {
@@ -69,8 +95,8 @@ const POS = () => {
       return;
     }
 
-    if (!customerName.trim()) {
-      alert('Please enter customer name');
+    if (!customerName || !plateNumber || !carType || !contactNumber) {
+      alert('Please fill in all required fields');
       return;
     }
 
@@ -83,6 +109,7 @@ const POS = () => {
       id: Date.now(),
       customerName,
       plateNumber,
+      contactNumber,
       carType,
       items: cart,
       total: getTotal(),
@@ -116,6 +143,7 @@ const POS = () => {
     setCart([]);
     setCustomerName('');
     setPlateNumber('');
+    setContactNumber('');
     setCarType('');
     setCashTendered('');
   };
@@ -145,6 +173,8 @@ const POS = () => {
   const selectCarType = (type) => {
     setCarType(type);
     setShowCarTypeDropdown(false);
+    // Recalculate services with new car type pricing
+    setServices(getServices());
   };
 
   // Close dropdown when clicking outside
@@ -370,6 +400,36 @@ const POS = () => {
                   }}
                 />
               </div>
+
+              {/* Contact Number */}
+              <div>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '6px',
+                  marginTop: '12px'
+                }}>
+                  CONTACT NUMBER
+                </label>
+                <input
+                  type="tel"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '6px',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value)}
+                  placeholder="Enter contact number"
+                />
+              </div>
             </div>
           </div>
 
@@ -385,24 +445,71 @@ const POS = () => {
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <h2 style={{
-              fontSize: '18px',
-              fontWeight: '600',
-              color: '#1e293b',
-              margin: '0 0 16px 0',
-              flexShrink: 0
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              flexWrap: 'wrap',
+              gap: '10px'
             }}>
-              Services
-            </h2>
+              <h2 style={{
+                margin: 0,
+                fontSize: '18px',
+                fontWeight: '600',
+                color: '#1e293b'
+              }}>
+                Services
+              </h2>
+              <div style={{
+                display: 'flex',
+                gap: '8px',
+                flexWrap: 'wrap'
+              }}>
+                {['ALL', 'EC Promo', 'Packages', 'Upgrades'].map(category => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '20px',
+                      border: 'none',
+                      background: selectedCategory === category ? '#3b82f6' : '#e2e8f0',
+                      color: selectedCategory === category ? 'white' : '#1e293b',
+                      fontWeight: '500',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      whiteSpace: 'nowrap'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedCategory !== category) {
+                        e.target.style.background = '#cbd5e1';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedCategory !== category) {
+                        e.target.style.background = '#e2e8f0';
+                      }
+                    }}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '12px',
-              flex: 1,
+              gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+              gap: '16px',
               overflowY: 'auto',
-              paddingRight: '4px'
+              paddingRight: '8px',
+              flex: 1
             }}>
-              {services.map((service) => (
+              {(selectedCategory === 'ALL' 
+                ? services 
+                : services.filter(service => service.category === selectedCategory)
+              ).map((service) => (
                 <button
                   key={service.id}
                   onClick={() => addToCart(service)}
@@ -445,6 +552,15 @@ const POS = () => {
                     color: '#3b82f6'
                   }}>
                     ₱{service.price.toLocaleString()}
+                    {carType && (
+                      <div style={{
+                        fontSize: '10px',
+                        color: '#64748b',
+                        marginTop: '2px'
+                      }}>
+                        ({carType} price)
+                      </div>
+                    )}
                   </div>
                   <div style={{
                     fontSize: '11px',
@@ -544,7 +660,9 @@ const POS = () => {
                       justifyContent: 'space-between',
                       padding: '10px',
                       background: 'rgba(255, 255, 255, 0.1)',
-                      borderRadius: '6px'
+                      borderRadius: '6px',
+                      position: 'relative',
+                      overflow: 'hidden'
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '14px', fontWeight: '600' }}>{item.name}</span>
@@ -562,8 +680,17 @@ const POS = () => {
                             color: '#ef4444',
                             fontSize: '16px',
                             cursor: 'pointer',
-                            padding: '2px'
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '4px',
+                            transition: 'background 0.2s ease'
                           }}
+                          onMouseOver={(e) => e.target.style.background = 'rgba(239, 68, 68, 0.1)'}
+                          onMouseOut={(e) => e.target.style.background = 'transparent'}
                         >
                           ✕
                         </button>
@@ -789,6 +916,18 @@ const POS = () => {
                   </span>
                 </div>
               )}
+              {currentTransaction.contactNumber && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px'
+                }}>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>Contact Number:</span>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                    {currentTransaction.contactNumber}
+                  </span>
+                </div>
+              )}
               {currentTransaction.carType && (
                 <div style={{
                   display: 'flex',
@@ -835,35 +974,23 @@ const POS = () => {
                     <tr style={{ background: '#f8fafc' }}>
                       <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Service</th>
                       <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Category</th>
-                      <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Unit Price</th>
-                      <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Qty</th>
-                      <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Subtotal</th>
+                      <th style={{ textAlign: 'right', padding: '10px 12px', fontSize: '12px', color: '#64748b' }}>Price</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {currentTransaction.items.map((item, index) => {
-                      const quantity = item.quantity || 1;
-                      const lineTotal = (item.price || 0) * quantity;
-                      return (
-                        <tr key={index}>
-                          <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#374151', fontWeight: 500 }}>
-                            {item.name}
-                          </td>
-                          <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '13px', color: '#64748b' }}>
-                            {item.category}
-                          </td>
-                          <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#374151', textAlign: 'right' }}>
-                            ₱{(item.price || 0).toLocaleString()}
-                          </td>
-                          <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#374151', textAlign: 'right' }}>
-                            {quantity}
-                          </td>
-                          <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#1e40af', textAlign: 'right', fontWeight: 700 }}>
-                            ₱{lineTotal.toLocaleString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {currentTransaction.items.map((item, index) => (
+                      <tr key={index}>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#374151', fontWeight: 500 }}>
+                          {item.name}
+                        </td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '13px', color: '#64748b' }}>
+                          {item.category}
+                        </td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid #e2e8f0', fontSize: '14px', color: '#1e40af', textAlign: 'right', fontWeight: 700 }}>
+                          ₱{item.price.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
