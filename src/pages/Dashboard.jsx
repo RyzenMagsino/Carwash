@@ -27,19 +27,6 @@ const Dashboard = () => {
     { id: 3, item: 'Wax', current: 3, min: 8 },
   ]);
 
-  const quickActions = [
-    { name: 'New Transaction', href: '/pos', icon: '💰', color: '#10b981' },
-    { name: 'View Inventory', href: '/inventory', icon: '📦', color: '#3b82f6' },
-    { name: 'Manage Services', href: '/services', icon: '🚗', color: '#8b5cf6' },
-    { name: 'View Reports', href: '/reports', icon: '📊', color: '#f59e0b' },
-  ].filter(action => {
-    if (action.href === '/pos') return hasPermission('process_transactions');
-    if (action.href === '/inventory') return hasPermission('view_inventory');
-    if (action.href === '/services') return hasPermission('view_services');
-    if (action.href === '/reports') return hasPermission('view_reports');
-    return true;
-  });
-
   return (
     <div style={{ padding: '24px', background: '#f8fafc', minHeight: '100vh' }}>
       {/* Header */}
@@ -210,81 +197,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Quick Actions */}
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        padding: '24px',
-        marginBottom: '32px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h2 style={{
-          fontSize: '20px',
-          fontWeight: '600',
-          color: '#1e293b',
-          margin: '0 0 20px 0'
-        }}>
-          Quick Actions
-        </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px'
-        }}>
-          {quickActions.map((action) => (
-            <Link
-              key={action.name}
-              to={action.href}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                padding: '20px',
-                borderRadius: '12px',
-                border: '2px solid #e2e8f0',
-                textDecoration: 'none',
-                transition: 'all 0.2s ease',
-                background: 'white'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.borderColor = action.color;
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(0, 0, 0, 0.1)';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.borderColor = '#e2e8f0';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = 'none';
-              }}
-            >
-              <div style={{
-                width: '48px',
-                height: '48px',
-                background: action.color,
-                borderRadius: '12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '24px',
-                marginBottom: '12px'
-              }}>
-                {action.icon}
-              </div>
-              <span style={{
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#1e293b',
-                textAlign: 'center'
-              }}>
-                {action.name}
-              </span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
+      
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
