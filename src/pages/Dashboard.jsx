@@ -326,25 +326,6 @@ const Dashboard = () => {
                     </p>
                   </div>
                 </div>
-                <button style={{
-                  color: '#3b82f6',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  transition: 'background 0.2s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#eff6ff';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'none';
-                }}>
-                  Reorder
-                </button>
               </div>
             ))}
           </div>

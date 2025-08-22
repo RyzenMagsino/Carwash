@@ -8,6 +8,8 @@ import Transaction from './pages/Transaction';
 import Inventory from './pages/Inventory';
 import Expenses from './pages/Expenses';
 import Services from './pages/Services';
+import Payroll from './pages/Payroll';
+import Scheduling from './pages/Scheduling';
 import Reports from './pages/Reports';
 import Layout from './components/Layout';
 import './index.css';
@@ -34,10 +36,12 @@ function App() {
         <Route path="/expenses" element={<Expenses />} />
         <Route path="/inventory" element={<Inventory />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/payroll" element={<Payroll />} />
+        <Route path="/scheduling" element={<Scheduling />} />
         <Route path="/reports" element={<Reports />} />
       </Routes>
     </Layout>
   );
 }
 
-export default App; 
+export default App;

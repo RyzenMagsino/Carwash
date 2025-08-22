@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Car, Droplet, Star, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Car, Droplet, Star, Plus, Trash2 } from 'lucide-react';
 
 const categoryIcons = {
   wash: <Droplet className="h-6 w-6 text-blue-500" />,
@@ -8,29 +8,45 @@ const categoryIcons = {
 };
 
 const categories = [
-  { value: 'wash', label: 'Wash' },
-  { value: 'detail', label: 'Promo' },
-  { value: 'addon', label: 'Package' },
+  { value: 'wash', label: 'Upgrades', posCategory: 'Upgrades' },
+  { value: 'detail', label: 'Promo', posCategory: 'Promo' },
+  { value: 'addon', label: 'EC Packages', posCategory: 'EC Packages' },
 ];
 
 const Services = () => {
-  const [services, setServices] = useState([
-    { id: 1, name: 'Basic Wash', description: 'Exterior wash and dry', category: 'wash' },
-    { id: 2, name: 'Interior Detail', description: 'Complete interior cleaning', category: 'detail' },
-    { id: 3, name: 'Full Detail', description: 'Complete interior and exterior detail', category: 'detail' },
-    { id: 5, name: 'Tire Shine', description: 'Tire cleaning and shine', category: 'addon' },
-  ]);
+  const [services, setServices] = useState(() => {
+    const savedServices = localStorage.getItem('carwash_services');
+    if (savedServices) {
+      return JSON.parse(savedServices);
+    }
+    return [];
+  });
+
+  // Update localStorage when services change
+  useEffect(() => {
+    localStorage.setItem('carwash_services', JSON.stringify(services));
+  }, [services]);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newService, setNewService] = useState({ name: '', description: '', category: '' });
+  const [newService, setNewService] = useState({ name: '', description: '', category: '', basePrice: '' });
 
   const handleAddService = () => {
-    if (!newService.name || !newService.description || !newService.category) {
+    if (!newService.name || !newService.description || !newService.category || !newService.basePrice) {
       return alert('Please fill all fields');
     }
-    setServices([...services, { ...newService, id: Date.now() }]);
-    setNewService({ name: '', description: '', category: '' });
+    const updatedServices = [...services, { ...newService, id: Date.now(), basePrice: parseFloat(newService.basePrice) }];
+    setServices(updatedServices);
+    localStorage.setItem('carwash_services', JSON.stringify(updatedServices));
+    setNewService({ name: '', description: '', category: '', basePrice: '' });
     setShowAddModal(false);
+  };
+
+  const handleDeleteService = (serviceId) => {
+    if (window.confirm('Are you sure you want to delete this service?')) {
+      const updatedServices = services.filter(service => service.id !== serviceId);
+      setServices(updatedServices);
+      localStorage.setItem('carwash_services', JSON.stringify(updatedServices));
+    }
   };
 
   return (
@@ -56,6 +72,21 @@ const Services = () => {
               <span className="text-lg font-semibold text-gray-800">{service.name}</span>
             </div>
             <p className="text-gray-600 text-sm">{service.description}</p>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-blue-600 font-bold">₱{service.basePrice}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  {categories.find(cat => cat.value === service.category)?.label}
+                </span>
+                <button
+                  onClick={() => handleDeleteService(service.id)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded transition"
+                  title="Delete service"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
           </div>
         ))}
       </div>
@@ -77,6 +108,13 @@ const Services = () => {
                 placeholder="Description"
                 value={newService.description}
                 onChange={e => setNewService({ ...newService, description: e.target.value })}
+                className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <input
+                type="number"
+                placeholder="Base Price (₱)"
+                value={newService.basePrice}
+                onChange={e => setNewService({ ...newService, basePrice: e.target.value })}
                 className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
               <select

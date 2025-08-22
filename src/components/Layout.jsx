@@ -14,6 +14,8 @@ const Layout = ({ children }) => {
     { name: 'Inventory', href: '/inventory', icon: '📦', permission: 'view_inventory' },
     { name: 'Expenses', href: '/expenses', icon: '💸', permission: 'view_expenses' },
     { name: 'Services', href: '/services', icon: '🚗', permission: 'view_services' },
+    { name: 'Scheduling', href: '/scheduling', icon: '📅', permission: 'view_scheduling' },
+    { name: 'Payroll', href: '/payroll', icon: '👥', permission: 'view_payroll' },
     { name: 'Reports', href: '/reports', icon: '📊', permission: 'view_reports' },
   ];
 

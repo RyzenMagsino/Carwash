@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaTrash, FaEdit, FaSearch, FaDownload, FaFilter } from "react-icons/fa";
+import { FaEdit, FaSearch, FaDownload, FaFilter } from "react-icons/fa";
 
 const Inventory = () => {
   const [items, setItems] = useState([
@@ -21,7 +21,6 @@ const Inventory = () => {
   const [getItem, setGetItem] = useState({ item: null, quantity: 1, employeeName: "" });
 
 
-  const deleteItem = (id) => setItems(items.filter(item => item.id !== id));
 
   const openGetModal = (item) => {
     setGetItem({ item: { ...item }, quantity: 1, employeeName: "" });
@@ -55,9 +54,6 @@ const Inventory = () => {
     setGetItem({ item: null, quantity: 1, employeeName: "" });
   };
 
-  const deleteHistoryItem = (id) => {
-    setHistory(history.filter(item => item.id !== id));
-  };
 
   const filteredItems = items.filter(item =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -145,12 +141,6 @@ const Inventory = () => {
                     >
                       <FaDownload />
                     </button>
-                    <button
-                      className="text-red-600 hover:text-red-700 mx-1 transform hover:scale-110 transition duration-200"
-                      onClick={() => deleteItem(item.id)}
-                    >
-                      <FaTrash />
-                    </button>
                   </td>
                 </tr>
               ))}
@@ -165,7 +155,6 @@ const Inventory = () => {
                 <th className="px-4 py-3">Quantity</th>
                 <th className="px-4 py-3">Employee</th>
                 <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody className="text-gray-800">
@@ -175,14 +164,6 @@ const Inventory = () => {
                   <td className="px-4 py-3">{item.quantity}</td>
                   <td className="px-4 py-3">{item.employeeName}</td>
                   <td className="px-4 py-3">{item.date}</td>
-                  <td className="px-4 py-3">
-                    <button
-                      className="text-red-600 hover:text-red-700 mx-1 transform hover:scale-110 transition duration-200"
-                      onClick={() => deleteHistoryItem(item.id)}
-                    >
-                      <FaTrash />
-                    </button>
-                  </td>
                 </tr>
               ))}
             </tbody>

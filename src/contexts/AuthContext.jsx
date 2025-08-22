@@ -68,14 +68,17 @@ export const AuthProvider = ({ children }) => {
         'process_transactions',
         'view_inventory',
         'view_services',
-        'view_transactions'
+        'view_transactions',
+        'view_payroll',
+        'view_scheduling'
         
       ],
       staff: [
         'view_inventory',
         'process_transactions',
         'view_services',
-        'view_transactions'
+        'view_transactions',
+        'view_scheduling'
       ]
     };
 

@@ -9,6 +9,8 @@ const POS = () => {
   const [contactNumber, setContactNumber] = useState('');
   const [carType, setCarType] = useState('');
   const [showCarTypeDropdown, setShowCarTypeDropdown] = useState(false);
+  const [selectedTeam, setSelectedTeam] = useState('');
+  const [showTeamDropdown, setShowTeamDropdown] = useState(false);
   const [cashTendered, setCashTendered] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showReceiptPopup, setShowReceiptPopup] = useState(false);
@@ -34,30 +36,63 @@ const POS = () => {
     'Truck': 1.4
   };
 
-  // Base prices for each service
-  const baseServices = [
-    // EC Promo Services
-    { id: 'EC1', name: 'EC1', basePrice: 150, category: 'EC Promo' },
-    { id: 'EC2', name: 'EC2', basePrice: 150, category: 'EC Promo' },
-    { id: 'EC3', name: 'EC3', basePrice: 200, category: 'EC Promo' },
-    { id: 'EC4', name: 'EC4', basePrice: 200, category: 'EC Promo' },
-    { id: 'EC5', name: 'EC5', basePrice: 250, category: 'EC Promo' },
-    { id: 'EC6', name: 'EC6', basePrice: 250, category: 'EC Promo' },
-    { id: 'EC7', name: 'EC7', basePrice: 300, category: 'EC Promo' },
-    { id: 'EC8', name: 'EC8', basePrice: 300, category: 'EC Promo' },
-    { id: 'EC9', name: 'EC9', basePrice: 500, category: 'EC Promo' },
-    { id: 'EC10', name: 'EC10', basePrice: 500, category: 'EC Promo' },
-    { id: 'EC11', name: 'EC11', basePrice: 1000, category: 'EC Promo' },
-    { id: 'EC12', name: 'EC12', basePrice: 1500, category: 'EC Promo' },
+  // Category mapping from Services page to POS categories
+  const categoryMapping = {
+    'wash': 'Upgrades',
+    'detail': 'Promo',
+    'addon': 'EC Packages'
+  };
+
+  // Load services from localStorage or use default services
+  const getBaseServices = () => {
+    const savedServices = localStorage.getItem('carwash_services');
+    if (savedServices) {
+      const services = JSON.parse(savedServices);
+      return services.map(service => ({
+        id: service.id,
+        name: service.name,
+        basePrice: service.basePrice,
+        category: categoryMapping[service.category] || 'Upgrades'
+      }));
+    }
     
-    // Package Services
-    { id: 'PKG1', name: 'Package 1', basePrice: 400, category: 'Packages' },
-    { id: 'PKG2', name: 'Package 2', basePrice: 600, category: 'Packages' },
+    // Default services if none saved
+    return [
+      // Promo Services
+      { id: 'EC1', name: 'EC1', basePrice: 150, category: 'Promo' },
+      { id: 'EC2', name: 'EC2', basePrice: 150, category: 'Promo' },
+      { id: 'EC3', name: 'EC3', basePrice: 200, category: 'Promo' },
+      { id: 'EC4', name: 'EC4', basePrice: 200, category: 'Promo' },
+      { id: 'EC5', name: 'EC5', basePrice: 250, category: 'Promo' },
+      { id: 'EC6', name: 'EC6', basePrice: 250, category: 'Promo' },
+      { id: 'EC7', name: 'EC7', basePrice: 300, category: 'Promo' },
+      { id: 'EC8', name: 'EC8', basePrice: 300, category: 'Promo' },
+      { id: 'EC9', name: 'EC9', basePrice: 500, category: 'Promo' },
+      { id: 'EC10', name: 'EC10', basePrice: 500, category: 'Promo' },
+      { id: 'EC11', name: 'EC11', basePrice: 1000, category: 'Promo' },
+      { id: 'EC12', name: 'EC12', basePrice: 1500, category: 'Promo' },
+      
+      // EC Package Services
+      { id: 'PKG1', name: 'Package 1', basePrice: 400, category: 'EC Packages' },
+      { id: 'PKG2', name: 'Package 2', basePrice: 600, category: 'EC Packages' },
+      
+      // Upgrade Services
+      { id: 'UPG1', name: 'Wax Upgrade', basePrice: 150, category: 'Upgrades' },
+      { id: 'UPG2', name: 'Interior Upgrade', basePrice: 250, category: 'Upgrades' },
+    ];
+  };
+
+  const [baseServices, setBaseServices] = useState(getBaseServices);
+
+  // Refresh services from localStorage when component mounts or when localStorage changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setBaseServices(getBaseServices());
+    };
     
-    // Upgrade Services
-    { id: 'UPG1', name: 'Wax Upgrade', basePrice: 150, category: 'Upgrades' },
-    { id: 'UPG2', name: 'Interior Upgrade', basePrice: 250, category: 'Upgrades' },
-  ];
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Memoize services based on carType
   const services = useMemo(() => {
@@ -66,7 +101,7 @@ const POS = () => {
       ...service,
       price: Math.round(service.basePrice * multiplier)
     }));
-  }, [carType]);
+  }, [carType, baseServices]);
 
   const addToCart = (service) => {
     const existingItem = cart.find(item => item.id === service.id);
@@ -88,15 +123,14 @@ const POS = () => {
     return cash - getTotal();
   };
 
-
   const processTransaction = () => {
     if (cart.length === 0) {
       alert('Please add services to cart');
       return;
     }
 
-    if (!customerName || !plateNumber || !carType || !contactNumber) {
-      alert('Please fill in all required fields');
+    if (!customerName || !plateNumber || !carType || !contactNumber || !selectedTeam) {
+      alert('Please fill in all required fields including team selection');
       return;
     }
 
@@ -111,6 +145,7 @@ const POS = () => {
       plateNumber,
       contactNumber,
       carType,
+      selectedTeam,
       items: cart,
       total: getTotal(),
       cashTendered: parseFloat(cashTendered),
@@ -119,6 +154,9 @@ const POS = () => {
       timestamp: new Date().toISOString(),
       status: 'completed'
     };
+
+    // Update team sales data for payroll
+    updateTeamSales(selectedTeam, getTotal());
 
     console.log('Transaction processed:', transaction);
     
@@ -145,6 +183,7 @@ const POS = () => {
     setPlateNumber('');
     setContactNumber('');
     setCarType('');
+    setSelectedTeam('');
     setCashTendered('');
   };
 
@@ -169,19 +208,47 @@ const POS = () => {
   };
 
   const carTypes = ['Sedan', 'SUV', 'Pick up', 'Van', 'Tricycle', 'Motorcycle', 'Truck'];
+  const teams = ['Team A', 'Team B'];
+
+  const selectTeam = (team) => {
+    setSelectedTeam(team);
+    setShowTeamDropdown(false);
+  };
+
+  // Function to update team sales data
+  const updateTeamSales = (team, amount) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const salesKey = `team_sales_${today}`;
+      const existingSales = JSON.parse(localStorage.getItem(salesKey) || '{}');
+      
+      if (!existingSales.teamA) existingSales.teamA = 0;
+      if (!existingSales.teamB) existingSales.teamB = 0;
+      
+      if (team === 'Team A') {
+        existingSales.teamA += amount;
+      } else if (team === 'Team B') {
+        existingSales.teamB += amount;
+      }
+      
+      localStorage.setItem(salesKey, JSON.stringify(existingSales));
+      console.log(`Updated ${team} sales by ₱${amount}. Total: ₱${existingSales[team === 'Team A' ? 'teamA' : 'teamB']}`);
+    } catch (error) {
+      console.error('Failed to update team sales:', error);
+    }
+  };
 
   const selectCarType = (type) => {
     setCarType(type);
     setShowCarTypeDropdown(false);
-    // Recalculate services with new car type pricing
-    setServices(getServices());
   };
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showCarTypeDropdown && !event.target.closest('[data-dropdown]')) {
+      if ((showCarTypeDropdown || showTeamDropdown) && !event.target.closest('[data-dropdown]')) {
         setShowCarTypeDropdown(false);
+        setShowTeamDropdown(false);
       }
     };
 
@@ -189,7 +256,7 @@ const POS = () => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showCarTypeDropdown]);
+  }, [showCarTypeDropdown, showTeamDropdown]);
 
   return (
     <div style={{
@@ -237,99 +304,188 @@ const POS = () => {
           }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
               gap: '12px'
             }}>
-                             {/* Car Type Dropdown */}
-               <div style={{ position: 'relative' }} data-dropdown>
-                 <label style={{
-                   display: 'block',
-                   fontSize: '13px',
-                   fontWeight: '600',
-                   color: '#374151',
-                   marginBottom: '6px'
-                 }}>
-                   CAR TYPE
-                 </label>
-                 <button 
-                   type="button"
-                   onClick={() => setShowCarTypeDropdown(!showCarTypeDropdown)}
-                   style={{
-                     width: '100%',
-                     padding: '10px 12px',
-                     background: 'white',
-                     border: '2px solid #e2e8f0',
-                     borderRadius: '6px',
-                     display: 'flex',
-                     alignItems: 'center',
-                     justifyContent: 'space-between',
-                     cursor: 'pointer',
-                     fontSize: '14px',
-                     fontWeight: '500',
-                     color: '#374151',
-                     textAlign: 'left'
-                   }}
-                   onMouseEnter={(e) => {
-                     e.target.style.borderColor = '#3b82f6';
-                   }}
-                   onMouseLeave={(e) => {
-                     e.target.style.borderColor = '#e2e8f0';
-                   }}
-                 >
-                   {carType || 'Select Car Type'}
-                   <span style={{ 
-                     fontSize: '14px', 
-                     transform: showCarTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
-                     transition: 'transform 0.2s ease'
-                   }}>
-                     ▼
-                   </span>
-                 </button>
-                 
-                 {/* Dropdown Menu */}
-                 {showCarTypeDropdown && (
-                   <div style={{
-                     position: 'absolute',
-                     top: '100%',
-                     left: 0,
-                     right: 0,
-                     background: 'white',
-                     border: '2px solid #3b82f6',
-                     borderTop: 'none',
-                     borderRadius: '0 0 6px 6px',
-                     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                     zIndex: 1000,
-                     maxHeight: '200px',
-                     overflowY: 'auto'
-                   }}>
-                     {carTypes.map((type) => (
-                       <button
-                         key={type}
-                         type="button"
-                         onClick={() => selectCarType(type)}
-                         style={{
-                           width: '100%',
-                           padding: '10px 12px',
-                           background: 'white',
-                           border: 'none',
-                           textAlign: 'left',
-                           fontSize: '14px',
-                           cursor: 'pointer',
-                           transition: 'background 0.2s ease'
-                         }}
-                         onMouseEnter={(e) => {
-                           e.target.style.background = '#f1f5f9';
-                         }}
-                         onMouseLeave={(e) => {
-                           e.target.style.background = 'white';
-                         }}
-                       >
-                         {type}
-                       </button>
-                     ))}
-                   </div>
-                 )}
-               </div>
+              {/* Team Selection Dropdown */}
+              <div style={{ position: 'relative' }} data-dropdown>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '6px'
+                }}>
+                  TEAM
+                </label>
+                <button 
+                  type="button"
+                  onClick={() => setShowTeamDropdown(!showTeamDropdown)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                  }}
+                >
+                  {selectedTeam || 'Select Team'}
+                  <span style={{ 
+                    fontSize: '14px', 
+                    transform: showTeamDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }}>
+                    ▼
+                  </span>
+                </button>
+                
+                {/* Team Dropdown Menu */}
+                {showTeamDropdown && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '2px solid #3b82f6',
+                    borderTop: 'none',
+                    borderRadius: '0 0 6px 6px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000
+                  }}>
+                    {teams.map((team) => (
+                      <button
+                        key={team}
+                        type="button"
+                        onClick={() => selectTeam(team)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          background: 'white',
+                          border: 'none',
+                          textAlign: 'left',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = '#f1f5f9';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = 'white';
+                        }}
+                      >
+                        {team}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Car Type Dropdown */}
+              <div style={{ position: 'relative' }} data-dropdown>
+                <label style={{
+                  display: 'block',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: '#374151',
+                  marginBottom: '6px'
+                }}>
+                  CAR TYPE
+                </label>
+                <button 
+                  type="button"
+                  onClick={() => setShowCarTypeDropdown(!showCarTypeDropdown)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    background: 'white',
+                    border: '2px solid #e2e8f0',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    color: '#374151',
+                    textAlign: 'left'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.borderColor = '#3b82f6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.borderColor = '#e2e8f0';
+                  }}
+                >
+                  {carType || 'Select Car Type'}
+                  <span style={{ 
+                    fontSize: '14px', 
+                    transform: showCarTypeDropdown ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s ease'
+                  }}>
+                    ▼
+                  </span>
+                </button>
+                
+                {/* Dropdown Menu */}
+                {showCarTypeDropdown && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    background: 'white',
+                    border: '2px solid #3b82f6',
+                    borderTop: 'none',
+                    borderRadius: '0 0 6px 6px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    zIndex: 1000,
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}>
+                    {carTypes.map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => selectCarType(type)}
+                        style={{
+                          width: '100%',
+                          padding: '10px 12px',
+                          background: 'white',
+                          border: 'none',
+                          textAlign: 'left',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.background = '#f1f5f9';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.background = 'white';
+                        }}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Customer Name */}
               <div>
@@ -390,7 +546,10 @@ const POS = () => {
                     boxSizing: 'border-box'
                   }}
                   value={plateNumber}
-                  onChange={(e) => setPlateNumber(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '');
+                    setPlateNumber(value);
+                  }}
                   placeholder="Enter plate number"
                   onFocus={(e) => {
                     e.target.style.borderColor = '#3b82f6';
@@ -408,8 +567,7 @@ const POS = () => {
                   fontSize: '13px',
                   fontWeight: '600',
                   color: '#374151',
-                  marginBottom: '6px',
-                  marginTop: '12px'
+                  marginBottom: '6px'
                 }}>
                   CONTACT NUMBER
                 </label>
@@ -426,7 +584,10 @@ const POS = () => {
                     boxSizing: 'border-box'
                   }}
                   value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/[^0-9]/g, '');
+                    setContactNumber(value);
+                  }}
                   placeholder="Enter contact number"
                 />
               </div>
@@ -466,7 +627,7 @@ const POS = () => {
                 gap: '8px',
                 flexWrap: 'wrap'
               }}>
-                {['ALL', 'EC Promo', 'Packages', 'Upgrades'].map(category => (
+                {['ALL', 'EC Packages', 'Promo', 'Upgrades'].map(category => (
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
@@ -775,7 +936,7 @@ const POS = () => {
             {/* Payment Button */}
             <button
               onClick={processTransaction}
-              disabled={cart.length === 0 || !customerName || !cashTendered || getChange() < 0}
+              disabled={cart.length === 0 || !customerName || !cashTendered || getChange() < 0 || !selectedTeam}
               style={{
                 width: '100%',
                 background: '#3b82f6',
@@ -785,18 +946,18 @@ const POS = () => {
                 padding: '12px',
                 fontSize: '16px',
                 fontWeight: '600',
-                cursor: cart.length === 0 || !customerName || !cashTendered || getChange() < 0 ? 'not-allowed' : 'pointer',
-                opacity: cart.length === 0 || !customerName || !cashTendered || getChange() < 0 ? 0.5 : 1,
+                cursor: cart.length === 0 || !customerName || !cashTendered || getChange() < 0 || !selectedTeam ? 'not-allowed' : 'pointer',
+                opacity: cart.length === 0 || !customerName || !cashTendered || getChange() < 0 || !selectedTeam ? 0.5 : 1,
                 transition: 'all 0.2s ease',
                 flexShrink: 0
               }}
               onMouseEnter={(e) => {
-                if (cart.length > 0 && customerName && cashTendered && getChange() >= 0) {
+                if (cart.length > 0 && customerName && cashTendered && getChange() >= 0 && selectedTeam) {
                   e.target.style.background = '#2563eb';
                 }
               }}
               onMouseLeave={(e) => {
-                if (cart.length > 0 && customerName && cashTendered && getChange() >= 0) {
+                if (cart.length > 0 && customerName && cashTendered && getChange() >= 0 && selectedTeam) {
                   e.target.style.background = '#3b82f6';
                 }
               }}
@@ -937,6 +1098,18 @@ const POS = () => {
                   <span style={{ fontSize: '14px', color: '#64748b' }}>Car Type:</span>
                   <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
                     {currentTransaction.carType}
+                  </span>
+                </div>
+              )}
+              {currentTransaction.selectedTeam && (
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: '8px'
+                }}>
+                  <span style={{ fontSize: '14px', color: '#64748b' }}>Team:</span>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                    {currentTransaction.selectedTeam}
                   </span>
                 </div>
               )}
